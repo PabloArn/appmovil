@@ -74,4 +74,75 @@ class MyDayViewModel : ViewModel() {
         updateScreenData() //Actualiza los datos de la pantalla
 
     }
+
+    // --- Lógica de CRUD (Agregar) ---
+    fun addYear(title: String, imageUri: Uri?) {
+        //Generamos un id para el año, si la lista de años está vacía, el id es 1, si no, el id es el máximo id + 1
+        val newId = if (allYears.isEmpty()) 1 else allYears.maxOf { it.id } + 1
+        allYears.add(DiaryYear(newId, title, imageUri)) //Añadimos el año a la lista de años
+        updateScreenData()
+    }
+
+    private fun getMonthNumber(monthName: String): Int {
+        //Limpiamos el nombre del mes para que no haya problemas con mayúsculas y minúsculas
+        val cleanName = monthName.trim().lowercase()
+        //Comprobamos el nombre del mes y devolvemos el número correspondiente
+        return when {
+            cleanName.startsWith("ene") -> 1
+            cleanName.startsWith("feb") -> 2
+            cleanName.startsWith("mar") -> 3
+            cleanName.startsWith("abr") -> 4
+            cleanName.startsWith("may") -> 5
+            cleanName.startsWith("jun") -> 6
+            cleanName.startsWith("jul") -> 7
+            cleanName.startsWith("ago") -> 8
+            cleanName.startsWith("sep") -> 9
+            cleanName.startsWith("oct") -> 10
+            cleanName.startsWith("nov") -> 11
+            cleanName.startsWith("dic") -> 12
+            else -> 13 //Si no coincide con ningún mes, devolvemos al final
+        }
+    }
+
+    fun addMonth(yearId: Int, title: String, imageUri: Uri?) {
+        val realOrder = getMonthNumber(title) //Obtenemos el número del mes
+        //Generamos un id para el mes, si la lista de meses está vacía, el id es 1, si no, el id es el máximo id + 1
+        val newId = if (allMonths.isEmpty()) 1 else allMonths.maxOf { it.id } + 1
+        //Creamos el mes y lo añadimos a la lista de meses
+        val newMonth = DiaryMonth(id = newId, yearId = yearId, title = title, chronologicalOrder = realOrder, coverImageUri = imageUri)
+        allMonths.add(newMonth)
+        updateScreenData()
+    }
+
+    fun addEntryNote(monthId: Int, text: String, imageUri: Uri?) {
+        val newId = if (allEntries.isEmpty()) 1 else allEntries.maxOf { it.id } + 1 //Generamos un id para la nota
+        //Creamos la nota con su id, mes, texto e imagen
+        val newEntry = DiaryEntry(id = newId, monthId = monthId, titleText = text, entryImageUri = imageUri)
+        allEntries.add(newEntry)
+        updateScreenData()
+    }
+
+    // --- Lógica de CRUD (Borrar) ---
+    fun deleteYear(year: DiaryYear) {
+        allYears.remove(year)
+        // Borrado en cascada: Borramos los meses de ese año y las notas de esos meses
+        val monthsToRemove = allMonths.filter { it.yearId == year.id }
+        allMonths.removeAll(monthsToRemove)
+        val monthIds = monthsToRemove.map { it.id }
+        allEntries.removeAll { it.monthId in monthIds }
+        updateScreenData()
+    }
+
+    fun deleteMonth(month: DiaryMonth) {
+        allMonths.remove(month)
+        // Borrado en cascada: Borramos las notas de ese mes
+        allEntries.removeAll { it.monthId == month.id }
+        updateScreenData()
+    }
+
+    fun deleteEntry(entry: DiaryEntry) {
+        //Aquí solo borramos la entrada o nota elegida
+        allEntries.remove(entry)
+        updateScreenData()
+    }
 }
