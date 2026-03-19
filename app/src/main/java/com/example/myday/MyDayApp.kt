@@ -125,6 +125,27 @@ fun DiaryApp(viewModel: MyDayViewModel = viewModel()) {
                 )
             }
         }
+        //Aquí revisamos si se debe mostrar la ventana para agregar un año, mes o entrada:
+        if (showAddYearDialog) {
+            AddYearDialog(onDismiss = { showAddYearDialog = false }) { title, imageUri ->
+                viewModel.addYear(title, imageUri)
+                showAddYearDialog = false
+            }
+        }
+
+        if (showAddMonthDialog) {
+            AddMonthDialog(onDismiss = { showAddMonthDialog = false }) { title, imageUri ->
+                uiState.currentYear?.id?.let { viewModel.addMonth(it, title, imageUri) }
+                showAddMonthDialog = false
+            }
+        }
+
+        if (showAddEntryDialog) {
+            AddEntryDialog(onDismiss = { showAddEntryDialog = false }) { text, imageUri ->
+                uiState.currentMonth?.id?.let { viewModel.addEntryNote(it, text, imageUri) }
+                showAddEntryDialog = false
+            }
+        }
     }
 }
 
@@ -265,4 +286,54 @@ fun EntryListScreen(currentMonth: DiaryMonth?, entriesForMonth: List<DiaryEntry>
             }
         }
     }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddYearDialog(onDismiss : () -> Unit, onAdd: (String, Uri?) -> Unit) {
+    //Esta variable almacena el texto del cuadro de diálogo temporalmente
+    var text by remember { mutableStateOf("") }
+    var tempUri by remember { mutableStateOf<Uri?>(null) }
+    AlertDialog(
+        //Si el usuario pulsa fuera del cuadro de diálogo, se cierra
+        onDismissRequest = onDismiss,
+        title = { Text("Nuevo Año") },
+        text = { Column { PhotoPickerField(selectedUri = tempUri, onUriSelected = { tempUri = it })
+            Spacer(modifier = Modifier.height(16.dp))
+            TextField(value = text, onValueChange = { text = it }, placeholder = { Text("Ej: Año 2027") }) } },
+        //boton para confirmar el cuadro de diálogo
+        confirmButton = { TextButton(onClick = { if (text.isNotBlank()) onAdd(text, tempUri) }) { Text("Agregar") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+    )
+}
+//Lo mismo que el anterior se muestra en lo siguientes cuadros de dialogos:
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddMonthDialog(onDismiss : () -> Unit, onAdd: (String, Uri?) -> Unit) {
+    var text by remember { mutableStateOf("") }
+    var tempUri by remember { mutableStateOf<Uri?>(null) }
+    AlertDialog(
+        onDismissRequest = onDismiss, title = { Text("Nuevo Mes") },
+        text = { Column { PhotoPickerField(selectedUri = tempUri, onUriSelected = { tempUri = it })
+            Spacer(modifier = Modifier.height(16.dp))
+            TextField(value = text, onValueChange = { text = it }, placeholder = { Text("Ej: Julio") }) } },
+        confirmButton = { TextButton(onClick = { if (text.isNotBlank()) onAdd(text, tempUri) }) { Text("Agregar") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddEntryDialog(onDismiss : () -> Unit, onAdd: (String, Uri?) -> Unit) {
+    var text by remember { mutableStateOf("") }
+    var tempUri by remember { mutableStateOf<Uri?>(null) }
+    AlertDialog(
+        onDismissRequest = onDismiss, title = { Text("Nueva Entrada") },
+        text = { Column { PhotoPickerField(selectedUri = tempUri, onUriSelected = { tempUri = it })
+            Spacer(modifier = Modifier.height(16.dp))
+            TextField(value = text, onValueChange = { text = it }, placeholder = { Text("Ej: Nota con ñ") }) } },
+        confirmButton = { TextButton(onClick = { if (text.isNotBlank()) onAdd(text, tempUri) }) { Text("Agregar") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+    )
 }
